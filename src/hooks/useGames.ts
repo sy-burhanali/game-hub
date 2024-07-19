@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import apiClient from "../services/api-client";
-import { CanceledError } from "axios";
+import { GameQuery } from "../App";
+import useData from "./useData";
+import { Genre } from "./useGenres";
 
 export interface Platform {
   id: number,
@@ -13,34 +13,19 @@ export interface Game {
     name: string;
     background_image: string;
     parent_platforms:  {platform: Platform}[]  // like string[]
+    metacritic: number;
+    rating_top: number;
   }
   
-  interface FetchGamesResponse {
-    count: number;
-    results: Game[];
-  }
   
-const useGames = () => {
-    const [games, setGames] = useState<Game[]>([]);
-    const [error, setError] = useState("");
-  
-    // using effect hook to send a fetch request to the backend
-    useEffect(() => {
-        const controller = new AbortController();
-
-      apiClient
-        .get<FetchGamesResponse>("/games", { signal: controller.signal })
-        .then((res) => setGames(res.data.results))
-        .catch((err) => {
-            // used CancelledError as it will send get request twice in StrictMode and first request will be cancelled always
-            if (err instanceof CanceledError) return;
-            setError(err.message)
-        });
-
-        return () => controller.abort();
-    }, []);
-
-    return { games, error };
-}
+const useGames = ( gameQuery: GameQuery) => useData<Game>('/games', { 
+  params: { 
+    genres: gameQuery.genre?.id, 
+    platforms: gameQuery.platform?.id,
+    ordering: gameQuery.sortOrder,
+    search: gameQuery.searchText  
+    }
+  }, 
+  [gameQuery])
 
 export default useGames;
